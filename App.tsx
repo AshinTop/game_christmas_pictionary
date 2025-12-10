@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { GameState, Team } from './types.ts';
-import { GameLobby } from './components/GameLobby.tsx';
-import Gameplay from './components/Gameplay.tsx';
+import { GameState, Team } from './types';
+import { GameLobby } from './components/GameLobby';
+import Gameplay from './components/Gameplay';
 import { Gift, Snowflake } from 'lucide-react';
 
 const App: React.FC = () => {

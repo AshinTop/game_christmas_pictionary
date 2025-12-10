@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Team } from '../types.ts';
-import { TEAM_COLORS } from '../constants.ts';
+import { Team } from '../types';
+import { TEAM_COLORS } from '../constants';
 import { Users, Play, HelpCircle, X, Monitor, PenTool, Trophy, Clock, Tv, Palette, Smile, CheckSquare, Square } from 'lucide-react';
 
 interface GameLobbyProps {
