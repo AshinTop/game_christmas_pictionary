@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GameState, Team, TurnResult } from '../types';
 import { CHRISTMAS_WORDS } from '../constants';
 import CanvasBoard, { CanvasBoardRef } from './CanvasBoard';
-import { Eye, Clock, CheckCircle, XCircle, ThumbsUp, X, Gift } from 'lucide-react';
+import { Eye, Clock, CheckCircle, XCircle, ThumbsUp, X, Gift, EyeOff, Flag, Trophy, AlertCircle } from 'lucide-react';
 
 interface GameplayProps {
   teams: Team[];
@@ -19,8 +19,10 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   const [timeLeft, setTimeLeft] = useState(60);
   const [turnResult, setTurnResult] = useState<TurnResult | null>(null);
   
-  // New state for flow control
+  // Flow control
   const [isWordRevealed, setIsWordRevealed] = useState(false);
+  const [isPeeking, setIsPeeking] = useState(false);
+  const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
   
   const canvasRef = useRef<CanvasBoardRef>(null);
   
@@ -57,7 +59,8 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   const startTurn = () => {
     setCurrentWord(getNextWord());
     setGameState(GameState.TURN_START);
-    setIsWordRevealed(false); // Reset reveal state
+    setIsWordRevealed(false);
+    setIsPeeking(false);
     setTimeLeft(60);
     setTurnResult(null);
   };
@@ -71,15 +74,12 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   };
 
   const handleCorrectGuess = () => {
-    // Call parent to update score
     onScoreUpdate(currentTeam.id);
-
     setTurnResult({
       word: currentWord,
       guessedCorrectly: true,
       teamId: currentTeam.id
     });
-
     setGameState(GameState.SCORING);
   };
 
@@ -100,9 +100,11 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
     startTurn();
   };
 
-  // Initial load
+  const confirmEndGame = () => {
+    onGameEnd(teams);
+  };
+
   useEffect(() => {
-    // Only fetch word if we haven't yet (to avoid double fetch on re-renders if strict mode)
     if (!currentWord) {
         startTurn();
     }
@@ -113,43 +115,75 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
     if (!isWordRevealed) {
         // Phase 1: Ready Screen
         return (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in relative">
             <div className="mb-8">
-               <div className={`w-24 h-24 mx-auto rounded-full ${currentTeam.color} flex items-center justify-center text-white text-4xl font-bold shadow-xl mb-4`}>
+               <div className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${currentTeam.color} flex items-center justify-center text-white text-3xl md:text-4xl font-bold shadow-xl mb-4`}>
                  {currentTeamIndex + 1}
                </div>
-               <h2 className="text-4xl font-bold text-gray-800 mb-2">
+               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                  {currentTeam.name}'s Turn
                </h2>
-               <p className="text-gray-500 text-lg">Are you ready to draw?</p>
+               <p className="text-gray-500 text-base md:text-lg">Are you ready to draw?</p>
             </div>
             
             <button 
               onClick={revealWord}
-              className={`px-10 py-5 rounded-2xl text-2xl font-bold text-white shadow-xl transition-transform transform active:scale-95 flex items-center gap-3 ${currentTeam.color}`}
+              className={`px-8 py-4 md:px-10 md:py-5 rounded-2xl text-xl md:text-2xl font-bold text-white shadow-xl transition-transform transform active:scale-95 flex items-center gap-3 ${currentTeam.color}`}
             >
-              <Gift size={32} /> Reveal Secret Word
+              <Gift size={28} /> Reveal Secret Word
             </button>
-            <p className="mt-6 text-sm text-red-400 font-bold uppercase tracking-wider">
+            <p className="mt-6 text-xs md:text-sm text-red-400 font-bold uppercase tracking-wider mb-8">
                ⚠️ Ensure only the artist is looking!
             </p>
+
+            <button 
+                onClick={() => setShowEndGameConfirm(true)}
+                className="text-gray-400 hover:text-red-500 font-bold text-sm flex items-center gap-2 mt-auto py-4"
+            >
+                <Flag size={16} /> End Game Early
+            </button>
+
+            {/* End Game Modal - Scoped here to allow ending during turn start */}
+            {showEndGameConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
+                        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Finish the Game?</h3>
+                        <p className="text-gray-600 mb-6">This will end the current session and show the final leaderboard.</p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setShowEndGameConfirm(false)}
+                                className="flex-1 py-3 rounded-xl bg-gray-100 font-bold text-gray-700 hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={confirmEndGame}
+                                className="flex-1 py-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-700 shadow-lg"
+                            >
+                                Finish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
           </div>
         );
     } else {
         // Phase 2: View Word Screen
         return (
           <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in">
-            <h3 className="text-gray-500 uppercase tracking-widest font-bold text-sm mb-6">Your Secret Word Is...</h3>
+            <h3 className="text-gray-500 uppercase tracking-widest font-bold text-xs md:text-sm mb-6">Your Secret Word Is...</h3>
             
-            <div className="mb-10 p-8 bg-red-50 border-2 border-dashed border-red-200 rounded-3xl">
-              <div className="text-5xl md:text-7xl font-black text-gray-800 font-christmas tracking-wide animate-pulse-slow">
+            <div className="mb-10 p-6 md:p-8 bg-red-50 border-2 border-dashed border-red-200 rounded-3xl w-full max-w-lg">
+              <div className="text-4xl md:text-6xl font-black text-gray-800 font-christmas tracking-wide animate-pulse-slow break-words">
                 {currentWord}
               </div>
             </div>
   
             <button 
               onClick={confirmReadyToDraw}
-              className="w-full max-w-sm bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center gap-2"
+              className="w-full max-w-sm bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg md:text-xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center gap-2"
             >
               <Clock size={24} /> Start Timer & Draw
             </button>
@@ -161,91 +195,172 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   // -- RENDER: SCORING --
   if (gameState === GameState.SCORING && turnResult) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in">
-         <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full relative border-4 border-red-100">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in w-full">
+         <div className="bg-white p-6 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full relative border-4 border-red-100">
             {turnResult.guessedCorrectly ? (
                 <div className="mb-4">
-                    <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-4 animate-bounce" />
-                    <h2 className="text-5xl font-christmas font-bold text-green-600 mb-2">Correct!</h2>
-                    <p className="text-green-600 text-xl font-bold bg-green-50 inline-block px-4 py-1 rounded-full">+1 Point</p>
+                    <CheckCircle className="w-20 h-20 md:w-24 md:h-24 text-green-500 mx-auto mb-4 animate-bounce" />
+                    <h2 className="text-4xl md:text-5xl font-christmas font-bold text-green-600 mb-2">Correct!</h2>
+                    <p className="text-green-600 text-lg md:text-xl font-bold bg-green-50 inline-block px-4 py-1 rounded-full">+1 Point</p>
                 </div>
             ) : (
                 <div className="mb-4">
-                     <XCircle className="w-24 h-24 text-red-500 mx-auto mb-4" />
-                     <h2 className="text-5xl font-christmas font-bold text-red-600 mb-2">Time's Up!</h2>
-                     <p className="text-gray-400 text-lg font-medium">Better luck next time!</p>
+                     <XCircle className="w-20 h-20 md:w-24 md:h-24 text-red-500 mx-auto mb-4" />
+                     <h2 className="text-4xl md:text-5xl font-christmas font-bold text-red-600 mb-2">Time's Up!</h2>
+                     <p className="text-gray-400 text-base md:text-lg font-medium">Better luck next time!</p>
                 </div>
             )}
 
             {/* Prominent Secret Word Display */}
-            <div className="my-8 py-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border-2 border-dashed border-gray-300">
-                <p className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-4">The Secret Word Was</p>
-                <div className="text-5xl md:text-6xl font-black font-christmas text-gray-800 tracking-wide break-words px-4">
+            <div className="my-6 md:my-8 py-6 md:py-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border-2 border-dashed border-gray-300">
+                <p className="text-xs md:text-sm uppercase tracking-widest text-gray-400 font-bold mb-3 md:mb-4">The Secret Word Was</p>
+                <div className="text-3xl md:text-5xl font-black font-christmas text-gray-800 tracking-wide break-words px-4">
                     {turnResult.word}
                 </div>
             </div>
 
-            <div className="flex gap-4 mt-8">
+            <div className="flex flex-col gap-3 mt-6 md:mt-8">
                 <button 
                     onClick={nextTurn}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform hover:scale-105 text-lg flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg transition-transform hover:scale-105 text-lg flex items-center justify-center gap-2"
                 >
                     Next Team <PlayArrowIcon />
                 </button>
+                <button 
+                    onClick={() => setShowEndGameConfirm(true)}
+                    className="w-full bg-white hover:bg-gray-50 text-gray-400 hover:text-red-500 font-bold py-2 rounded-xl text-sm transition-colors"
+                >
+                    End Game Now
+                </button>
             </div>
          </div>
+         {/* End Game Modal for Scoring Screen */}
+         {showEndGameConfirm && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
+                    <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Declare Winner?</h3>
+                    <p className="text-gray-600 mb-6">Show the final leaderboard and end the game?</p>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setShowEndGameConfirm(false)}
+                            className="flex-1 py-3 rounded-xl bg-gray-100 font-bold text-gray-700 hover:bg-gray-200"
+                        >
+                            Back
+                        </button>
+                        <button 
+                            onClick={confirmEndGame}
+                            className="flex-1 py-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-700 shadow-lg"
+                        >
+                            Show Ranking
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
       </div>
     );
   }
 
   // -- RENDER: DRAWING BOARD --
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between p-4 bg-white/50 backdrop-blur rounded-b-2xl mb-4 shadow-sm">
-        <div className={`flex flex-col ${currentTeam.color.replace('bg-', 'text-')}`}>
-            <span className="text-xs font-bold uppercase tracking-wider">Artist</span>
-            <span className="font-bold text-lg leading-none">{currentTeam.name}</span>
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full relative">
+      {/* Top Bar - Mobile Optimized */}
+      <div className="flex items-center justify-between px-3 py-2 md:p-4 bg-white/50 backdrop-blur rounded-b-2xl mb-2 md:mb-4 shadow-sm border-b border-gray-100">
+        
+        {/* Left: Artist Info */}
+        <div className={`flex flex-col justify-center ${currentTeam.color.replace('bg-', 'text-')}`}>
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider opacity-80">Artist</span>
+            <span className="font-bold text-base md:text-lg leading-tight truncate max-w-[100px] md:max-w-[150px]">{currentTeam.name}</span>
         </div>
 
-        <div className={`flex items-center gap-2 font-mono text-2xl font-bold ${timeLeft < 10 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
-            <Clock size={24} />
+        {/* Center: Timer */}
+        <div className={`flex items-center gap-1 md:gap-2 font-mono text-xl md:text-2xl font-bold ${timeLeft < 10 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
+            <Clock size={20} className="md:w-6 md:h-6" />
             {timeLeft}s
         </div>
 
+        {/* Right: Target Word Peek */}
         <div className="flex flex-col items-end">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Target</span>
-            <div className="group relative">
-                <span className="font-bold text-lg leading-none filter blur-md hover:blur-none transition-all cursor-help select-none">
-                    {currentWord}
-                </span>
-                <span className="absolute -top-6 right-0 text-[10px] bg-black text-white px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Hover to peek
-                </span>
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-500 mb-0.5">Target</span>
+            <div className="relative">
+                <button 
+                  onClick={() => setIsPeeking(!isPeeking)}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold transition-all ${isPeeking ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}
+                >
+                    {isPeeking ? (
+                        <>
+                           <span>{currentWord}</span>
+                           <EyeOff size={14} />
+                        </>
+                    ) : (
+                        <>
+                           <span>Hidden</span>
+                           <Eye size={14} />
+                        </>
+                    )}
+                </button>
             </div>
         </div>
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 px-4 flex flex-col items-center">
+      <div className="flex-1 px-2 md:px-4 flex flex-col items-center w-full">
         <CanvasBoard ref={canvasRef} />
         
-        <div className="w-full max-w-2xl mt-6 flex gap-4">
+        {/* Action Buttons - Mobile Responsive */}
+        <div className="w-full max-w-2xl mt-4 md:mt-6 flex gap-3 md:gap-4">
              <button
                 onClick={handleGiveUp}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 md:py-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
             >
-                <X size={20} /> Give Up / Time's Up
+                <X size={18} /> <span className="hidden sm:inline">Give Up / Time's Up</span><span className="sm:hidden">Give Up</span>
             </button>
             <button
                 onClick={handleCorrectGuess}
-                className="flex-[2] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                className="flex-[2] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm md:text-base"
             >
-                <ThumbsUp size={24} /> We Guessed It!
+                <ThumbsUp size={20} /> <span className="sm:inline">We Guessed It!</span><span className="hidden">Correct</span>
             </button>
         </div>
-        <p className="mt-2 text-xs text-gray-400">Click Green when your team guesses correctly!</p>
+        
+        <div className="flex flex-col items-center justify-between w-full max-w-2xl mt-4">
+            <button 
+                onClick={() => setShowEndGameConfirm(true)}
+                className="text-gray-300 hover:text-red-500 text-lg font-bold flex items-center gap-1 transition-colors"
+                title="End Game Early"
+            >
+                <Flag size={12} /> End Game
+            </button>
+            <p className="text-[10px] md:text-xs text-gray-400 text-center">Click Green when your team guesses correctly!</p>
+            <div className="w-16"></div> {/* Spacer for center alignment of text */}
+        </div>
       </div>
+
+      {/* End Game Modal - Scoped here to allow ending during drawing */}
+        {showEndGameConfirm && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Stop the Game?</h3>
+                    <p className="text-gray-600 mb-6">Are you sure you want to end the game and see the winners?</p>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setShowEndGameConfirm(false)}
+                            className="flex-1 py-3 rounded-xl bg-gray-100 font-bold text-gray-700 hover:bg-gray-200"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={confirmEndGame}
+                            className="flex-1 py-3 rounded-xl bg-red-600 font-bold text-white hover:bg-red-700 shadow-lg"
+                        >
+                            End Game
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
