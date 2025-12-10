@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameState, Team, TurnResult } from '../types';
-import { CHRISTMAS_WORDS } from '../constants';
-import CanvasBoard, { CanvasBoardRef } from './CanvasBoard';
+import { GameState, Team, TurnResult } from '../types.ts';
+import { CHRISTMAS_WORDS } from '../constants.ts';
+import CanvasBoard, { CanvasBoardRef } from './CanvasBoard.tsx';
 import { Eye, Clock, CheckCircle, XCircle, ThumbsUp, X, Gift } from 'lucide-react';
 
 interface GameplayProps {

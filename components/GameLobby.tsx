@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Team } from '../types';
-import { TEAM_COLORS } from '../constants';
+import { Team } from '../types.ts';
+import { TEAM_COLORS } from '../constants.ts';
 import { Users, Play, HelpCircle, X, Monitor, PenTool, Trophy, Clock, Tv, Palette, Smile, CheckSquare, Square } from 'lucide-react';
 
 interface GameLobbyProps {
@@ -9,7 +9,7 @@ interface GameLobbyProps {
 
 type ModalType = 'none' | 'help' | 'start_confirmation';
 
-const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
+export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
   const [teams, setTeams] = useState<Team[]>([
     { id: 1, name: 'The Elves', score: 0, color: TEAM_COLORS[0].hex },
     { id: 2, name: 'The Reindeers', score: 0, color: TEAM_COLORS[1].hex }
@@ -170,7 +170,6 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
                 </span>
             </div>
         </div>
-      </div>
 
       {/* Unified Rules/Start Modal */}
       {activeModal !== 'none' && (
@@ -281,5 +280,3 @@ const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
     </div>
   );
 };
-
-export default GameLobby;
