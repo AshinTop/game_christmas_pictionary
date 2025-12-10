@@ -63,117 +63,120 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 animate-fade-in w-full max-w-5xl mx-auto">
-      {/* Main Game Setup Card */}
-      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-lg w-full border-b-8 border-red-200 relative mb-12 z-10">
-        <button 
-            onClick={() => setActiveModal('help')}
-            className="absolute top-4 right-4 text-gray-400 hover:text-green-600 transition-colors"
-            title="How to Play"
-        >
-            <HelpCircle size={24} />
-        </button>
-
-        <div className="text-center mb-8">
-          <h2 className="font-christmas text-4xl text-red-700 font-bold mb-2">Christmas Pictionary</h2>
-          <p className="text-gray-500">Classic Party Game Mode</p>
-        </div>
-
-        <div className="space-y-4 mb-8">
-          {teams.map((team, index) => (
-            <div key={team.id} className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full ${team.color} flex items-center justify-center text-white font-bold shadow-md`}>
-                {index + 1}
-              </div>
-              <input
-                type="text"
-                value={team.name}
-                onChange={(e) => updateName(team.id, e.target.value)}
-                className="flex-1 text-lg border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
-                placeholder="Team Name"
-              />
-              {teams.length > 2 && (
-                <button 
-                  onClick={() => removeTeam(team.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-3 mb-8">
+    <>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 animate-fade-in w-full max-w-5xl mx-auto">
+        {/* Main Game Setup Card */}
+        <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-lg w-full border-b-8 border-red-200 relative mb-12 z-10">
           <button 
-            onClick={addTeam}
-            disabled={teams.length >= 4}
-            className="flex-1 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all disabled:opacity-50"
+              onClick={() => setActiveModal('help')}
+              className="absolute top-4 right-4 text-gray-400 hover:text-green-600 transition-colors"
+              title="How to Play"
           >
-            + Add Team
+              <HelpCircle size={24} />
+          </button>
+
+          <div className="text-center mb-8">
+            <h2 className="font-christmas text-4xl text-red-700 font-bold mb-2">Christmas Pictionary</h2>
+            <p className="text-gray-500">Classic Party Game Mode</p>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            {teams.map((team, index) => (
+              <div key={team.id} className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full ${team.color} flex items-center justify-center text-white font-bold shadow-md`}>
+                  {index + 1}
+                </div>
+                <input
+                  type="text"
+                  value={team.name}
+                  onChange={(e) => updateName(team.id, e.target.value)}
+                  className="flex-1 text-lg border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
+                  placeholder="Team Name"
+                />
+                {teams.length > 2 && (
+                  <button 
+                    onClick={() => removeTeam(team.id)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3 mb-8">
+            <button 
+              onClick={addTeam}
+              disabled={teams.length >= 4}
+              className="flex-1 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all disabled:opacity-50"
+            >
+              + Add Team
+            </button>
+          </div>
+
+          <button 
+            onClick={handleStartRequest}
+            className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-xl font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] flex items-center justify-center gap-2"
+          >
+            <Play fill="currentColor" /> Start Game
           </button>
         </div>
 
-        <button 
-          onClick={handleStartRequest}
-          className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-xl font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] flex items-center justify-center gap-2"
-        >
-          <Play fill="currentColor" /> Start Game
-        </button>
+        {/* SEO & Info Section */}
+        <div className="grid md:grid-cols-2 gap-8 w-full bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-white/50 text-left">
+          {/* Left Column: Quick Guide */}
+          <div>
+              <h3 className="text-2xl font-bold text-red-700 font-christmas mb-4 flex items-center gap-2">
+                  <Tv size={24} /> How to Play
+              </h3>
+              <ul className="space-y-4 text-gray-700">
+                  <li className="flex gap-3 items-start">
+                      <span className="bg-green-100 text-green-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                      <span><strong>Connect to TV:</strong> For the best experience, cast this screen to a large TV so everyone can watch the drawing action.</span>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                      <span className="bg-green-100 text-green-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                      <span><strong>Form Teams:</strong> Split your group into teams. Enter your team names above to get started.</span>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                      <span className="bg-green-100 text-green-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                      <span><strong>Draw & Guess:</strong> Take turns drawing festive words while your team guesses before time runs out!</span>
+                  </li>
+              </ul>
+          </div>
+
+          {/* Right Column: SEO Content */}
+          <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Smile size={20} className="text-yellow-600" /> Perfect for Holidays
+              </h3>
+              <p className="text-gray-600 mb-4 text-sm leading-relaxed">
+                  Looking for the best <strong>family Christmas games ideas</strong>? This digital Christmas Pictionary is the ultimate no-prep solution. 
+                  Designed as one of the top <strong>Christmas party games for large groups</strong>, it replaces messy paper and pens with a fun, interactive digital whiteboard.
+              </p>
+              <p className="text-gray-600 mb-4 text-sm leading-relaxed">
+                  Whether you're hosting a cozy family night or a big holiday bash, this game brings everyone together. It works great on iPads, tablets, or laptops connected to the living room TV.
+              </p>
+              
+              <div className="flex flex-wrap gap-2 mt-4">
+                  <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-100 flex items-center gap-1">
+                      <Palette size={12} /> Multi-Color Brush
+                  </span>
+                  <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-100 flex items-center gap-1">
+                      <Trophy size={12} /> Score Tracking
+                  </span>
+                  <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-100 flex items-center gap-1">
+                      <Clock size={12} /> Auto Timer
+                  </span>
+              </div>
+          </div>
+        </div>
       </div>
-
-      {/* SEO & Info Section */}
-      <div className="grid md:grid-cols-2 gap-8 w-full bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-sm border border-white/50 text-left">
-        {/* Left Column: Quick Guide */}
-        <div>
-            <h3 className="text-2xl font-bold text-red-700 font-christmas mb-4 flex items-center gap-2">
-                <Tv size={24} /> How to Play
-            </h3>
-            <ul className="space-y-4 text-gray-700">
-                <li className="flex gap-3 items-start">
-                    <span className="bg-green-100 text-green-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-                    <span><strong>Connect to TV:</strong> For the best experience, cast this screen to a large TV so everyone can watch the drawing action.</span>
-                </li>
-                <li className="flex gap-3 items-start">
-                    <span className="bg-green-100 text-green-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-                    <span><strong>Form Teams:</strong> Split your group into teams. Enter your team names above to get started.</span>
-                </li>
-                <li className="flex gap-3 items-start">
-                    <span className="bg-green-100 text-green-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-                    <span><strong>Draw & Guess:</strong> Take turns drawing festive words while your team guesses before time runs out!</span>
-                </li>
-            </ul>
-        </div>
-
-        {/* Right Column: SEO Content */}
-        <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                <Smile size={20} className="text-yellow-600" /> Perfect for Holidays
-            </h3>
-            <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                Looking for the best <strong>family Christmas games ideas</strong>? This digital Christmas Pictionary is the ultimate no-prep solution. 
-                Designed as one of the top <strong>Christmas party games for large groups</strong>, it replaces messy paper and pens with a fun, interactive digital whiteboard.
-            </p>
-            <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                Whether you're hosting a cozy family night or a big holiday bash, this game brings everyone together. It works great on iPads, tablets, or laptops connected to the living room TV.
-            </p>
-            
-            <div className="flex flex-wrap gap-2 mt-4">
-                <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-100 flex items-center gap-1">
-                    <Palette size={12} /> Multi-Color Brush
-                </span>
-                <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-100 flex items-center gap-1">
-                    <Trophy size={12} /> Score Tracking
-                </span>
-                <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-100 flex items-center gap-1">
-                    <Clock size={12} /> Auto Timer
-                </span>
-            </div>
-        </div>
 
       {/* Unified Rules/Start Modal */}
       {activeModal !== 'none' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative flex flex-col">
                 <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-100 p-4 flex justify-between items-center z-10">
                     <h3 className="text-2xl font-bold text-red-700 font-christmas">
@@ -277,6 +280,6 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
             </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
