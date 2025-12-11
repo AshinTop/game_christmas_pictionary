@@ -1,6 +1,6 @@
 # 🎄 Christmas Pictionary | Fun Family Party Game
 
-![Christmas Pictionary Banner](https://christmas-pictionary.crazy3d.org/og-image.png)
+![Christmas Pictionary Banner](https://christmas-pictionary.crazy3d.org/screenshot.png)
 
 **Play Online:** [https://christmas-pictionary.crazy3d.org/](https://christmas-pictionary.crazy3d.org/)
 
