@@ -69,6 +69,16 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, words, roundsPerTeam, onGame
     return () => clearInterval(interval);
   }, [gameState, timeLeft]);
 
+  // Lock scroll when end game modal is open
+  useEffect(() => {
+    if (showEndGameConfirm) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showEndGameConfirm]);
+
   // Actions
   const startTurn = () => {
     setCurrentWord(getNextWord());
@@ -185,7 +195,7 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, words, roundsPerTeam, onGame
 
             {/* End Game Modal - Scoped here to allow ending during turn start */}
             {showEndGameConfirm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
                         <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
                         <h3 className="text-2xl font-bold text-gray-800 mb-2">Finish the Game?</h3>
@@ -286,7 +296,7 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, words, roundsPerTeam, onGame
          </div>
          {/* End Game Modal for Scoring Screen */}
          {showEndGameConfirm && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
                     <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">Declare Winner?</h3>
@@ -389,7 +399,7 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, words, roundsPerTeam, onGame
 
       {/* End Game Modal - Scoped here to allow ending during drawing */}
         {showEndGameConfirm && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
                     <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">Stop the Game?</h3>

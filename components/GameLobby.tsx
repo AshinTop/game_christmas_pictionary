@@ -45,6 +45,16 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
     setWordList([...CHRISTMAS_WORDS]);
   }, []);
 
+  // Lock scroll when modal is open
+  useEffect(() => {
+    if (activeModal !== 'none') {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [activeModal]);
+
   const saveWordsToStorage = (words: string[]) => {
       localStorage.setItem('christmas_pictionary_custom_words', JSON.stringify(words));
       setWordList(words);
@@ -302,9 +312,11 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
           </div>
         </div>
 
+      
+
         {/* New Expanded SEO Content Section */}
         <div className="w-full mt-8 bg-white/80 backdrop-blur-md p-8 md:p-10 rounded-3xl border border-white/50 text-left shadow-sm">
-            <h2 className="text-3xl md:text-4xl font-christmas font-bold text-red-700 mb-8 text-center drop-shadow-sm">The Best Christmas Party Game Ideas for 2024</h2>
+            <h2 className="text-3xl md:text-4xl font-christmas font-bold text-red-700 mb-8 text-center drop-shadow-sm">The Best Christmas Party Game Ideas for 2025</h2>
             
             <div className="grid md:grid-cols-3 gap-8 text-sm text-gray-700 leading-relaxed">
                 <div className="bg-white/60 p-6 rounded-2xl border border-green-50 hover:shadow-md transition-shadow">
@@ -338,10 +350,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
                 </div>
             </div>
 
-        
-
-            {/* Share Section */}
-              <div className="bg-white/50 mt-8 p-4 rounded-2xl border border-white">
+                    {/* Share Section */}
+              <div className="mt-8 bg-white/50 p-4 rounded-2xl border border-white">
                   <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-1 justify-center">
                       <Share2 size={12} /> Share the Fun
                   </p>
@@ -361,7 +371,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
                   </div>
               </div>
 
-                  <div className="mt-8 pt-8 border-t border-gray-200 text-center">
+            <div className="mt-8 pt-8 border-t border-gray-200 text-center">
                  <p className="text-gray-500 text-xs uppercase tracking-widest font-bold mb-2">Popular Categories Included</p>
                  <div className="flex flex-wrap justify-center gap-2">
                     {["Christmas Movies", "Winter Activities", "Holiday Food", "Decorations", "Carols", "Nativity"].map(tag => (
@@ -373,9 +383,11 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
 
       </div>
 
+
+
       {/* Unified Modal System */}
       {activeModal !== 'none' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-red-50/30 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-red-50/30 backdrop-blur-sm animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden relative flex flex-col border-8 border-red-100 ring-4 ring-white">
                 
                 {/* Modal Header */}
@@ -525,18 +537,35 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
                     {activeModal === 'start_confirmation' && (
                         <div className="space-y-6">
                             {/* Rules Summary */}
-                            <div className="p-4 rounded-2xl border border-blue-100 mb-6">
+                              <div className="p-4 rounded-2xl border border-blue-100 mb-6">
                                 <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
-                                    <HelpCircle size={18} /> Quick Rules
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    className="lucide lucide-circle-question-mark"
+                                    aria-hidden="true"
+                                >
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                                Quick Rules
                                 </h4>
                                 <div
-                                  className="mt-4 space-y-4 overflow-y-auto flex-1 bg-[radial-gradient(#f3f4f6_1px,transparent_1px)] [background-size:20px_20px]"
+                                className="mt-4 space-y-4 overflow-y-auto flex-1 bg-[radial-gradient(#f3f4f6_1px,transparent_1px)] [background-size:20px_20px]"
                                 >
-                                  <div className="flex gap-4">
+                                <div className="flex gap-4">
                                     <div
-                                      className="flex-shrink-0 w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm transform -rotate-3"
+                                    className="flex-shrink-0 w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm transform -rotate-3"
                                     >
-                                      <svg
+                                    <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="28"
                                         height="28"
@@ -548,39 +577,37 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
                                         stroke-linejoin="round"
                                         className="lucide lucide-monitor"
                                         aria-hidden="true"
-                                      >
+                                    >
                                         <rect width="20" height="14" x="2" y="3" rx="2"></rect>
                                         <line x1="8" x2="16" y1="21" y2="21"></line>
                                         <line x1="12" x2="12" y1="17" y2="21"></line>
-                                      </svg>
+                                    </svg>
                                     </div>
                                     <div>
-                                      <h4 className="font-bold text-gray-800 mb-1">
-                                        1. Connect to TV
-                                      </h4>
-                                      <p className="text-gray-600">
+                                    <h4 className="font-bold text-gray-800 mb-1">1. Connect to TV</h4>
+                                    <p className="text-gray-600">
                                         Connect this device to a TV so the whole room can see the drawings!
-                                      </p>
+                                    </p>
                                     </div>
-                                  </div>
-                                  <div className="flex gap-4">
+                                </div>
+                                <div className="flex gap-4">
                                     <div
-                                      className="flex-shrink-0 w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center shadow-sm transform rotate-3"
+                                    className="flex-shrink-0 w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center shadow-sm transform rotate-3"
                                     >
-                                      <div className="font-bold text-2xl">A</div>
+                                    <div className="font-bold text-2xl">A</div>
                                     </div>
                                     <div>
-                                      <h4 className="font-bold text-gray-800 mb-1">2. Form Teams</h4>
-                                      <p className="text-gray-600">
+                                    <h4 className="font-bold text-gray-800 mb-1">2. Form Teams</h4>
+                                    <p className="text-gray-600">
                                         Split into teams. Enter your team names on the home screen.
-                                      </p>
+                                    </p>
                                     </div>
-                                  </div>
-                                  <div className="flex gap-4">
+                                </div>
+                                <div className="flex gap-4">
                                     <div
-                                      className="flex-shrink-0 w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shadow-sm transform -rotate-3"
+                                    className="flex-shrink-0 w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shadow-sm transform -rotate-3"
                                     >
-                                      <svg
+                                    <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="28"
                                         height="28"
@@ -592,27 +619,25 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
                                         stroke-linejoin="round"
                                         className="lucide lucide-pen-tool"
                                         aria-hidden="true"
-                                      >
+                                    >
                                         <path
-                                          d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"
+                                        d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"
                                         ></path>
                                         <path
-                                          d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"
+                                        d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"
                                         ></path>
                                         <path d="m2.3 2.3 7.286 7.286"></path>
                                         <circle cx="11" cy="11" r="2"></circle>
-                                      </svg>
+                                    </svg>
                                     </div>
                                     <div>
-                                      <h4 className="font-bold text-gray-800 mb-1">
-                                        3. Draw &amp; Guess
-                                      </h4>
-                                      <p className="text-gray-600">
+                                    <h4 className="font-bold text-gray-800 mb-1">3. Draw &amp; Guess</h4>
+                                    <p className="text-gray-600">
                                         Artist sees the secret word and draws. Team guesses before the timer
                                         runs out!
-                                      </p>
+                                    </p>
                                     </div>
-                                  </div>
+                                </div>
                                 </div>
                             </div>
 

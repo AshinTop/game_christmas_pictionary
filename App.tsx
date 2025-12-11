@@ -32,6 +32,16 @@ const App: React.FC = () => {
     return () => document.removeEventListener('click', unlockAudio);
   }, []);
 
+  // Lock scroll when exit modal is open
+  useEffect(() => {
+    if (showExitConfirm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showExitConfirm]);
+
   const toggleSound = () => {
       const newState = !isMuted;
       setIsMuted(newState);
@@ -48,6 +58,9 @@ const App: React.FC = () => {
       return true;
     }
   }, []);
+
+  // Use simplified header if embedded OR if the game is in progress
+  const showSimpleHeader = isEmbedded || gameState !== GameState.LOBBY;
 
   const handleStartGame = (gameTeams: Team[], customWords: string[], rounds: number) => {
     setTeams(gameTeams);
@@ -114,27 +127,38 @@ const App: React.FC = () => {
       setGameState(GameState.LOBBY);
       setShowExitConfirm(false);
   };
-
+  
   const handleScreenshot = async () => {
-      gameAudio.playClick();
-      const element = document.getElementById('game-over-card');
-      if (!element) return;
-      
-      try {
-          const canvas = await html2canvas(element, { 
-              backgroundColor: null,
-              scale: 2
-          });
-          const data = canvas.toDataURL('image/png');
-          const link = document.createElement('a');
-          link.href = data;
-          link.download = 'christmas-pictionary-results.png';
-          link.click();
-      } catch (e) {
-          console.error("Screenshot failed", e);
-          alert("Could not create screenshot. Please try again.");
-      }
+    gameAudio.playClick();
+    const element = document.getElementById("game-over-card");
+    if (!element) return;
+    // Save scroll position
+    const scrollPos = window.scrollY;
+    // Scroll to top to ensure html2canvas captures correctly without offsets
+    window.scrollTo(0, 0);
+    try {
+      // Small delay to ensure layout stabilizes after scroll
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const canvas = await html2canvas(element, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const data = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = data;
+      link.download = "christmas-pictionary-results.png";
+      link.click();
+    } catch (e) {
+      console.error("Screenshot failed", e);
+      alert("Could not create screenshot. Please try again.");
+    } finally {
+      // Restore scroll position
+      window.scrollTo(0, scrollPos);
+    }
   };
+
 
   const handleGlobalShare = async () => {
     gameAudio.playClick();
@@ -192,8 +216,9 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen ${isEmbedded ? 'bg-white' : ''} flex flex-col font-sans text-gray-800 overflow-x-hidden transition-colors duration-500`}>
       
-      {/* Header - Simplified if embedded */}
-      {!isEmbedded ? (
+      {/* Header Logic */}
+      {!showSimpleHeader ? (
+        // Full Header (Only for Non-Embedded LOBBY)
         <header className="bg-white/90 backdrop-blur-md shadow-lg border-b-4 border-red-500 sticky top-0 z-50 transition-all duration-300">
           <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer group select-none" onClick={() => setGameState(GameState.LOBBY)}>
@@ -209,6 +234,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center">
+                {/* Scoreboard in Full Header is only shown if not in lobby, but simplified header logic takes over then. So this is mostly for potential future use or edge cases */}
                 {gameState !== GameState.LOBBY && (
                 <div className="flex items-center gap-3 md:gap-6 overflow-x-auto no-scrollbar px-4 border-r-2 border-gray-100 mr-4">
                     {sortedTeams.map((team, index) => (
@@ -243,7 +269,7 @@ const App: React.FC = () => {
           </div>
         </header>
       ) : (
-        /* Embedded Compact Header */
+        // Simplified Header (For Embedded OR Gameplay)
         <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
            {gameState === GameState.LOBBY ? (
                <div className="flex items-center gap-2">
@@ -307,35 +333,123 @@ const App: React.FC = () => {
                     <h2 className="text-5xl md:text-7xl font-christmas font-bold text-red-600 mb-2 drop-shadow-md">Game Over!</h2>
                     <p className="text-gray-500 font-bold uppercase tracking-widest mb-8">Final Standings</p>
                     
-                    <div id="game-over-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-md border-8 border-red-500 relative overflow-hidden mb-6 bg-candy-cane">
-                        <div className="absolute inset-2 bg-white rounded-2xl z-0"></div>
-                        
-                        <div className="relative z-10">
-                            {/* Add title inside for screenshot context */}
-                            <div className="text-center mb-6">
-                                <h3 className="font-christmas text-3xl text-red-700 font-bold">Christmas Champions</h3>
-                            </div>
-                            
-                            {sortedTeams.map((team, idx) => (
-                                <div key={team.id} className="flex items-center justify-between py-4 border-b-2 border-gray-100 last:border-0 relative">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-white shadow-lg border-4 border-white ${
-                                            idx === 0 ? 'bg-yellow-400 scale-110 ring-4 ring-yellow-200' : 
-                                            idx === 1 ? 'bg-gray-300' : 
-                                            idx === 2 ? 'bg-amber-600' : 'bg-gray-100 text-gray-400'
-                                        }`}>
-                                            {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
-                                        </div>
-                                        <div className="text-left">
-                                            <span className={`block font-bold leading-tight ${idx === 0 ? 'text-gray-800 text-2xl' : 'text-gray-600 text-lg'}`}>{team.name}</span>
-                                            {idx === 0 && <span className="text-[10px] font-bold text-white bg-yellow-500 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">Winner</span>}
-                                        </div>
-                                    </div>
-                                    <span className={`text-4xl font-black font-christmas ${idx === 0 ? 'text-green-600 drop-shadow-sm' : 'text-gray-400'}`}>{team.score}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                   <div id="game-over-card" className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-md border-8 border-red-500 relative overflow-hidden mb-6 bg-candy-cane">
+                      <div className="absolute inset-2 bg-white rounded-2xl z-0"></div>
+                      
+                      <div className="relative z-10">
+                          
+                          {/* 1. 标题 (保持 SVG <text>) */}
+                          <div className="text-center mb-6">
+                              <svg width="100%" height="40" viewBox="0 0 300 40" className="mx-auto" xmlns="http://www.w3.org/2000/svg">
+                                  <text 
+                                      x="150" 
+                                      y="30" 
+                                      textAnchor="middle" 
+                                      className="font-christmas" 
+                                      style={{
+                                          fontSize: '30px', 
+                                          fontWeight: 'bold', 
+                                          fill: '#B91C1C' /* text-red-700 */
+                                      }}
+                                  >
+                                      Christmas Champions
+                                  </text>
+                              </svg>
+                          </div>
+                          
+                          {sortedTeams.map((team, idx) => (
+                              // 外部容器保持 Flexbox 布局
+                              <div key={team.id} className="flex items-center justify-between py-4 border-b-2 border-gray-100 last:border-0 relative">
+                                  
+                                  {/* 2. 团队信息：奖杯/名称/Winner 标签 -> 统一 SVG 容器 */}
+                                  <svg width="200" height="40" viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg">
+                                      
+                                      {/* A. 奖杯/序号容器（ w-14 h-14 圆圈） */}
+                                      <g transform="translate(20, 20)"> {/* 将整个图标组定位在 (20, 20) */}
+                                          <circle 
+                                              r="20" /* w-14/2 约 28px/2 = 14，这里取 20px */
+                                              cx="0" 
+                                              cy="0" 
+                                              fill={
+                                                  idx === 0 ? '#FDD835' /* bg-yellow-400 */ : 
+                                                  idx === 1 ? '#D1D5DB' /* bg-gray-300 */ : 
+                                                  idx === 2 ? '#E98000' /* bg-amber-600 */ : '#F3F4F6' /* bg-gray-100 */
+                                              }
+                                              stroke="white" 
+                                              strokeWidth="4" 
+                                              // scale-110 (1.1) 仅应用于第一个元素
+                                              transform={idx === 0 ? 'scale(1.1)' : 'scale(1)'}
+                                          />
+                                          {/* 奖杯/序号文本/Emoji */}
+                                          <text 
+                                              x="0" 
+                                              y="5" /* 调整 Y 确保 Emoji 垂直居中 */
+                                              textAnchor="middle" 
+                                              fontSize="18" 
+                                              fontWeight="bold"
+                                              fill={idx >= 3 ? '#9CA3AF' : 'white'}
+                                          >
+                                              {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                                          </text>
+                                      </g>
+
+                                      {/* B. 团队名称 (Name) */}
+                                      <text 
+                                          x="55" /* 20 + 20(半径) + 15(间距) = 55 */
+                                          y="18" /* 调整 Y 确保名称居中 */
+                                          fontSize={idx === 0 ? '20' : '16'} 
+                                          fontWeight="bold"
+                                          fill={idx === 0 ? '#1F2937' /* text-gray-800 */ : '#4B5563' /* text-gray-600 */}
+                                      >
+                                          {team.name}
+                                      </text>
+
+                                      {/* C. Winner 标签 (仅第一个) */}
+                                      {idx === 0 && (
+                                          <rect 
+                                              x="55" 
+                                              y="25" /* 位于名称下方 */
+                                              rx="10" /* rounded-full */ 
+                                              width="55" 
+                                              height="15" 
+                                              fill="#F59E0B" /* bg-yellow-500 */
+                                          />
+                                      )}
+                                      {idx === 0 && (
+                                          <text 
+                                              x="82.5" /* 55 + 55/2 = 82.5 (矩形中心) */
+                                              y="36" 
+                                              textAnchor="middle" 
+                                              fontSize="8" /* text-[10px] */
+                                              fontWeight="bold"
+                                              fill="white"
+                                          >
+                                              WINNER
+                                          </text>
+                                      )}
+                                  </svg>
+
+                                  {/* 3. 分数 (保持 SVG <text>) */}
+                                  <svg width="60" height="40" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                                      <text 
+                                          x="60" 
+                                          y="30" 
+                                          textAnchor="end" 
+                                          className="font-christmas" 
+                                          style={{
+                                              fontSize: '32px', 
+                                              fontWeight: '900', 
+                                              fill: idx === 0 ? '#059669' : '#9CA3AF'
+                                          }}
+                                      >
+                                          {team.score}
+                                      </text>
+                                  </svg>
+
+                              </div>
+                          ))}
+                      </div>
+                  </div>
                     
                     <div className="flex flex-col items-center gap-4 w-full max-w-md">
                         {/* Social Links Row */}
@@ -384,7 +498,7 @@ const App: React.FC = () => {
 
       {/* Exit Game Confirmation Modal */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100 ring-4 ring-white">
                 <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Exit Game?</h3>
