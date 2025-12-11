@@ -1,6 +1,6 @@
 # 🎄 Christmas Pictionary | Fun Family Party Game
 
-![Christmas Pictionary Banner](https://christmas-pictionary.crazy3d.org/screenshot.png)
+![Christmas Pictionary Banner](https://crazy3d.org/images/h/christmas_pictionary_screenshot.png)
 
 **Play Online:** [https://christmas-pictionary.crazy3d.org/](https://christmas-pictionary.crazy3d.org/)
 
@@ -49,7 +49,7 @@ To run this project on your local machine:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/christmas-pictionary.git
+    git clone https://github.com/AshinTop/game_christmas_pictionary.git
     cd christmas-pictionary
     ```
 
