@@ -383,9 +383,9 @@ const App: React.FC = () => {
                                           {/* 奖杯/序号文本/Emoji */}
                                           <text 
                                               x="0" 
-                                              y="5" /* 调整 Y 确保 Emoji 垂直居中 */
+                                              y={idx >= 3 ? 4:8} /* 调整 Y 确保 Emoji 垂直居中 */
                                               textAnchor="middle" 
-                                              fontSize="18" 
+                                              fontSize={idx >= 3 ?16:24}
                                               fontWeight="bold"
                                               fill={idx >= 3 ? '#9CA3AF' : 'white'}
                                           >
@@ -420,7 +420,7 @@ const App: React.FC = () => {
                                               x="82.5" /* 55 + 55/2 = 82.5 (矩形中心) */
                                               y="36" 
                                               textAnchor="middle" 
-                                              fontSize="8" /* text-[10px] */
+                                              fontSize="10" /* text-[10px] */
                                               fontWeight="bold"
                                               fill="white"
                                           >
@@ -437,7 +437,7 @@ const App: React.FC = () => {
                                           textAnchor="end" 
                                           className="font-christmas" 
                                           style={{
-                                              fontSize: '32px', 
+                                              fontSize: '40px', 
                                               fontWeight: '900', 
                                               fill: idx === 0 ? '#059669' : '#9CA3AF'
                                           }}
