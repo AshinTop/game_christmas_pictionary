@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { GameState, Team } from './types';
+import { GameState, Team, ModalType } from './types';
 import { GameLobby } from './components/GameLobby';
 import Gameplay from './components/Gameplay';
 import { Gift, Snowflake, RefreshCw, Trophy, Crown, LogOut, AlertCircle, Share2, Download, Mail, Facebook, Twitter, MessageCircle, Volume2, VolumeX, Link, Copy } from 'lucide-react';
@@ -16,6 +16,7 @@ declare global {
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.LOBBY);
+    const [activeModal, setActiveModal] = useState<ModalType>('none');
   const [teams, setTeams] = useState<Team[]>([]);
   const [gameWords, setGameWords] = useState<string[]>([]);
   const [roundsPerTeam, setRoundsPerTeam] = useState(6);
@@ -60,7 +61,7 @@ const App: React.FC = () => {
   }, []);
 
   // Use simplified header if embedded OR if the game is in progress
-  const showSimpleHeader = isEmbedded || gameState !== GameState.LOBBY;
+  const showSimpleHeader = isEmbedded || gameState !== GameState.LOBBY || activeModal === 'start_confirmation';
 
   const handleStartGame = (gameTeams: Team[], customWords: string[], rounds: number) => {
     setTeams(gameTeams);

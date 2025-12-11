@@ -23,3 +23,5 @@ export interface RoundConfig {
   totalRounds: number;
   drawTimeSeconds: number;
 }
+
+export type ModalType = 'none' | 'help' | 'start_confirmation' | 'settings';

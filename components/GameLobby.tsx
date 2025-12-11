@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Team } from '../types';
+import { Team,ModalType } from '../types';
 import { TEAM_COLORS, CHRISTMAS_WORDS } from '../constants';
 import { Play, HelpCircle, X, Monitor, PenTool, Tv, Palette, Smile, CheckSquare, Square, Gift, Trees, Trophy, Clock, Settings, Plus, Trash2, RotateCcw, Save, Facebook, Twitter, MessageCircle, Link, Copy, Share2, Star, Users, Zap } from 'lucide-react';
 import { gameAudio } from '../utils/audio';
@@ -8,7 +8,7 @@ interface GameLobbyProps {
   onStartGame: (teams: Team[], customWords: string[], roundsPerTeam: number) => void;
 }
 
-type ModalType = 'none' | 'help' | 'start_confirmation' | 'settings';
+
 
 export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
   const [teams, setTeams] = useState<Team[]>([
