@@ -60,7 +60,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Use simplified header if embedded OR if the game is in progress
+  // Use simplified header if embedded OR if the game is in progress OR if start confirmation is showing
   const showSimpleHeader = isEmbedded || gameState !== GameState.LOBBY || activeModal === 'start_confirmation';
 
   const handleStartGame = (gameTeams: Team[], customWords: string[], rounds: number) => {
@@ -313,7 +313,10 @@ const App: React.FC = () => {
         
         <div className="w-full h-full flex-1 flex flex-col z-10">
             {gameState === GameState.LOBBY && (
-                <GameLobby onStartGame={handleStartGame} />
+                <GameLobby 
+                    onStartGame={handleStartGame} 
+                    onModalChange={setActiveModal}
+                />
             )}
             
             {(gameState === GameState.TURN_START || gameState === GameState.DRAWING || gameState === GameState.SCORING) && (

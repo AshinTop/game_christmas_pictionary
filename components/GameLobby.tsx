@@ -6,11 +6,12 @@ import { gameAudio } from '../utils/audio';
 
 interface GameLobbyProps {
   onStartGame: (teams: Team[], customWords: string[], roundsPerTeam: number) => void;
+  onModalChange?: (modalType: ModalType) => void;
 }
 
 
 
-export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
+export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame, onModalChange }) => {
   const [teams, setTeams] = useState<Team[]>([
     { id: 1, name: 'The Elves', score: 0, color: TEAM_COLORS[0].hex },
     { id: 2, name: 'The Reindeers', score: 0, color: TEAM_COLORS[1].hex }
@@ -26,6 +27,13 @@ export const GameLobby: React.FC<GameLobbyProps> = ({ onStartGame }) => {
   // Modal state management
   const [activeModal, setActiveModal] = useState<ModalType>('none');
   const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  // Sync modal state with parent
+  useEffect(() => {
+    if (onModalChange) {
+        onModalChange(activeModal);
+    }
+  }, [activeModal, onModalChange]);
 
   // Load words from local storage on mount
   useEffect(() => {
