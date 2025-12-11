@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GameState, Team, TurnResult } from '../types';
-import { CHRISTMAS_WORDS } from '../constants';
 import CanvasBoard, { CanvasBoardRef } from './CanvasBoard';
 import { Eye, Clock, CheckCircle, XCircle, ThumbsUp, X, Gift, EyeOff, Flag, Trophy, AlertCircle } from 'lucide-react';
+import { gameAudio } from '../utils/audio';
 
 interface GameplayProps {
   teams: Team[];
+  words: string[];
+  roundsPerTeam: number;
   onGameEnd: (teams: Team[]) => void;
   onScoreUpdate: (teamId: number) => void;
 }
 
-const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) => {
+const Gameplay: React.FC<GameplayProps> = ({ teams, words, roundsPerTeam, onGameEnd, onScoreUpdate }) => {
   // Game State
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [gameState, setGameState] = useState<GameState>(GameState.TURN_START);
@@ -18,6 +20,9 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   const [usedWords, setUsedWords] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(60);
   const [turnResult, setTurnResult] = useState<TurnResult | null>(null);
+  
+  // Track total turns to enforce round limit
+  const [totalTurnsPlayed, setTotalTurnsPlayed] = useState(0);
   
   // Flow control
   const [isWordRevealed, setIsWordRevealed] = useState(false);
@@ -30,11 +35,15 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
 
   // Helper to get random unique word
   const getNextWord = () => {
-    const available = CHRISTMAS_WORDS.filter(w => !usedWords.has(w));
+    // Use the passed props.words instead of constant
+    const available = words.filter(w => !usedWords.has(w));
+    
     if (available.length === 0) {
       // Reset if all used
       setUsedWords(new Set());
-      return CHRISTMAS_WORDS[Math.floor(Math.random() * CHRISTMAS_WORDS.length)];
+      // Safety check if words array is empty (though Lobby prevents this)
+      if (words.length === 0) return "Christmas Tree"; 
+      return words[Math.floor(Math.random() * words.length)];
     }
     const word = available[Math.floor(Math.random() * available.length)];
     setUsedWords(prev => new Set(prev).add(word));
@@ -46,7 +55,12 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
     let interval: ReturnType<typeof setInterval>;
     if (gameState === GameState.DRAWING && timeLeft > 0) {
       interval = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
+        setTimeLeft(prev => {
+            if (prev <= 11 && prev > 1) { // 10, 9...
+                 gameAudio.playTick();
+            }
+            return prev - 1;
+        });
       }, 1000);
     } else if (timeLeft === 0 && gameState === GameState.DRAWING) {
        // Time's up!
@@ -66,14 +80,17 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   };
 
   const revealWord = () => {
+    gameAudio.playClick();
     setIsWordRevealed(true);
   };
 
   const confirmReadyToDraw = () => {
+    gameAudio.playStart();
     setGameState(GameState.DRAWING);
   };
 
   const handleCorrectGuess = () => {
+    gameAudio.playSuccess();
     onScoreUpdate(currentTeam.id);
     setTurnResult({
       word: currentWord,
@@ -84,6 +101,7 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   };
 
   const handleGiveUp = () => {
+    gameAudio.playFailure();
     setTurnResult({
       word: currentWord,
       guessedCorrectly: false,
@@ -93,16 +111,35 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   };
 
   const nextTurn = () => {
+    gameAudio.playClick();
     if (canvasRef.current) {
         canvasRef.current.clearCanvas();
     }
+
+    // Check if max rounds reached
+    // Total allowed turns = number of teams * rounds per team
+    const nextTurnCount = totalTurnsPlayed + 1;
+    const maxTurns = teams.length * roundsPerTeam;
+
+    if (nextTurnCount >= maxTurns) {
+        onGameEnd(teams);
+        return;
+    }
+
+    setTotalTurnsPlayed(nextTurnCount);
     setCurrentTeamIndex((prev) => (prev + 1) % teams.length);
     startTurn();
   };
 
   const confirmEndGame = () => {
+    gameAudio.playClick();
     onGameEnd(teams);
   };
+  
+  const togglePeek = () => {
+      gameAudio.playClick();
+      setIsPeeking(!isPeeking);
+  }
 
   useEffect(() => {
     if (!currentWord) {
@@ -114,13 +151,16 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   if (gameState === GameState.TURN_START) {
     if (!isWordRevealed) {
         // Phase 1: Ready Screen
+        const currentRound = Math.floor(totalTurnsPlayed / teams.length) + 1;
+        
         return (
           <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in relative">
             <div className="mb-8">
-               <div className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${currentTeam.color} flex items-center justify-center text-white text-3xl md:text-4xl font-bold shadow-xl mb-4`}>
+               <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Round {currentRound} of {roundsPerTeam}</div>
+               <div className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${currentTeam.color} flex items-center justify-center text-white text-3xl md:text-4xl font-bold shadow-xl mb-4 border-4 border-white ring-2 ring-gray-200`}>
                  {currentTeamIndex + 1}
                </div>
-               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 font-christmas">
                  {currentTeam.name}'s Turn
                </h2>
                <p className="text-gray-500 text-base md:text-lg">Are you ready to draw?</p>
@@ -128,25 +168,25 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
             
             <button 
               onClick={revealWord}
-              className={`px-8 py-4 md:px-10 md:py-5 rounded-2xl text-xl md:text-2xl font-bold text-white shadow-xl transition-transform transform active:scale-95 flex items-center gap-3 ${currentTeam.color}`}
+              className={`btn-3d px-8 py-5 md:px-10 md:py-6 rounded-2xl text-xl md:text-2xl font-bold text-white shadow-xl flex items-center gap-3 ${currentTeam.color} border-b-4 border-black/20`}
             >
               <Gift size={28} /> Reveal Secret Word
             </button>
-            <p className="mt-6 text-xs md:text-sm text-red-400 font-bold uppercase tracking-wider mb-8">
+            <p className="mt-6 text-xs md:text-sm text-red-500 font-bold uppercase tracking-wider mb-8 bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm shadow-sm">
                ⚠️ Ensure only the artist is looking!
             </p>
 
             <button 
                 onClick={() => setShowEndGameConfirm(true)}
-                className="text-gray-400 hover:text-red-500 font-bold text-sm flex items-center gap-2 mt-auto py-4"
+                className="text-gray-400 hover:text-red-500 font-bold text-sm flex items-center gap-2 mt-auto py-4 px-4 bg-white/50 rounded-xl hover:bg-white transition-colors"
             >
                 <Flag size={16} /> End Game Early
             </button>
 
             {/* End Game Modal - Scoped here to allow ending during turn start */}
             {showEndGameConfirm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
                         <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
                         <h3 className="text-2xl font-bold text-gray-800 mb-2">Finish the Game?</h3>
                         <p className="text-gray-600 mb-6">This will end the current session and show the final leaderboard.</p>
@@ -173,17 +213,19 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
         // Phase 2: View Word Screen
         return (
           <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in">
-            <h3 className="text-gray-500 uppercase tracking-widest font-bold text-xs md:text-sm mb-6">Your Secret Word Is...</h3>
+            <h3 className="text-gray-500 uppercase tracking-widest font-bold text-xs md:text-sm mb-6 bg-white/50 px-3 py-1 rounded-full">Your Secret Word Is...</h3>
             
-            <div className="mb-10 p-6 md:p-8 bg-red-50 border-2 border-dashed border-red-200 rounded-3xl w-full max-w-lg">
-              <div className="text-4xl md:text-6xl font-black text-gray-800 font-christmas tracking-wide animate-pulse-slow break-words">
-                {currentWord}
+            <div className="mb-10 p-8 md:p-12 bg-white border-8 border-red-500 rounded-3xl w-full max-w-lg shadow-2xl bg-candy-cane relative overflow-hidden">
+              <div className="absolute inset-2 bg-white rounded-xl flex items-center justify-center p-4">
+                  <div className="text-4xl md:text-6xl font-black text-gray-800 font-christmas tracking-wide animate-pulse-slow break-words text-center leading-tight">
+                    {currentWord}
+                  </div>
               </div>
             </div>
   
             <button 
               onClick={confirmReadyToDraw}
-              className="w-full max-w-sm bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg md:text-xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center gap-2"
+              className="btn-3d w-full max-w-sm bg-green-500 text-white font-bold py-5 rounded-2xl text-lg md:text-xl shadow-lg flex items-center justify-center gap-2 border-b-4 border-green-700 active:border-b-0 active:mt-1 active:mb-[-1px]"
             >
               <Clock size={24} /> Start Timer & Draw
             </button>
@@ -194,26 +236,32 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
 
   // -- RENDER: SCORING --
   if (gameState === GameState.SCORING && turnResult) {
+    // Calculate if it's the last turn
+    const currentTurnCount = totalTurnsPlayed; // Current turns before this one was completed, wait... 
+    // totalTurnsPlayed updates in nextTurn, so currently it is N.
+    // The next button will make it N+1.
+    const isLastTurn = (totalTurnsPlayed + 1) >= (teams.length * roundsPerTeam);
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center animate-fade-in w-full">
-         <div className="bg-white p-6 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full relative border-4 border-red-100">
+         <div className="bg-white p-6 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full relative border-8 border-white ring-4 ring-gray-100">
             {turnResult.guessedCorrectly ? (
                 <div className="mb-4">
-                    <CheckCircle className="w-20 h-20 md:w-24 md:h-24 text-green-500 mx-auto mb-4 animate-bounce" />
+                    <CheckCircle className="w-20 h-20 md:w-24 md:h-24 text-green-500 mx-auto mb-4 animate-bounce drop-shadow-md" />
                     <h2 className="text-4xl md:text-5xl font-christmas font-bold text-green-600 mb-2">Correct!</h2>
-                    <p className="text-green-600 text-lg md:text-xl font-bold bg-green-50 inline-block px-4 py-1 rounded-full">+1 Point</p>
+                    <p className="text-white text-lg md:text-xl font-bold bg-green-500 inline-block px-4 py-1 rounded-full shadow-sm">+1 Point</p>
                 </div>
             ) : (
                 <div className="mb-4">
-                     <XCircle className="w-20 h-20 md:w-24 md:h-24 text-red-500 mx-auto mb-4" />
+                     <XCircle className="w-20 h-20 md:w-24 md:h-24 text-red-500 mx-auto mb-4 drop-shadow-md" />
                      <h2 className="text-4xl md:text-5xl font-christmas font-bold text-red-600 mb-2">Time's Up!</h2>
                      <p className="text-gray-400 text-base md:text-lg font-medium">Better luck next time!</p>
                 </div>
             )}
 
             {/* Prominent Secret Word Display */}
-            <div className="my-6 md:my-8 py-6 md:py-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border-2 border-dashed border-gray-300">
-                <p className="text-xs md:text-sm uppercase tracking-widest text-gray-400 font-bold mb-3 md:mb-4">The Secret Word Was</p>
+            <div className="my-6 md:my-8 py-6 md:py-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300 relative">
+                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-3 text-gray-400 text-xs font-bold uppercase tracking-widest">The Secret Word Was</div>
                 <div className="text-3xl md:text-5xl font-black font-christmas text-gray-800 tracking-wide break-words px-4">
                     {turnResult.word}
                 </div>
@@ -222,22 +270,24 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
             <div className="flex flex-col gap-3 mt-6 md:mt-8">
                 <button 
                     onClick={nextTurn}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg transition-transform hover:scale-105 text-lg flex items-center justify-center gap-2"
+                    className="btn-3d w-full bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg text-lg flex items-center justify-center gap-2 border-b-4 border-blue-700 active:border-b-0 active:mt-1 active:mb-[-1px]"
                 >
-                    Next Team <PlayArrowIcon />
+                    {isLastTurn ? "Finish Game" : "Next Team"} <PlayArrowIcon />
                 </button>
-                <button 
-                    onClick={() => setShowEndGameConfirm(true)}
-                    className="w-full bg-white hover:bg-gray-50 text-gray-400 hover:text-red-500 font-bold py-2 rounded-xl text-sm transition-colors"
-                >
-                    End Game Now
-                </button>
+                {!isLastTurn && (
+                    <button 
+                        onClick={() => setShowEndGameConfirm(true)}
+                        className="w-full bg-transparent hover:bg-gray-50 text-gray-400 hover:text-red-500 font-bold py-3 rounded-xl text-sm transition-colors"
+                    >
+                        End Game Now
+                    </button>
+                )}
             </div>
          </div>
          {/* End Game Modal for Scoring Screen */}
          {showEndGameConfirm && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
                     <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">Declare Winner?</h3>
                     <p className="text-gray-600 mb-6">Show the final leaderboard and end the game?</p>
@@ -266,32 +316,34 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto w-full relative">
       {/* Top Bar - Mobile Optimized */}
-      <div className="flex items-center justify-between px-3 py-2 md:p-4 bg-white/50 backdrop-blur rounded-b-2xl mb-2 md:mb-4 shadow-sm border-b border-gray-100">
+      <div className="flex items-center justify-between px-3 py-2 md:p-4 bg-white/80 backdrop-blur rounded-b-2xl mb-2 md:mb-4 shadow-sm border-b border-gray-100 z-20">
         
         {/* Left: Artist Info */}
-        <div className={`flex flex-col justify-center ${currentTeam.color.replace('bg-', 'text-')}`}>
-            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider opacity-80">Artist</span>
-            <span className="font-bold text-base md:text-lg leading-tight truncate max-w-[100px] md:max-w-[150px]">{currentTeam.name}</span>
+        <div className={`flex flex-col justify-center ${currentTeam.color.replace('bg-', 'text-')} pl-1`}>
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider opacity-60">Artist</span>
+            <span className="font-bold text-base md:text-lg leading-tight truncate max-w-[90px] md:max-w-[150px]">{currentTeam.name}</span>
         </div>
 
         {/* Center: Timer */}
-        <div className={`flex items-center gap-1 md:gap-2 font-mono text-xl md:text-2xl font-bold ${timeLeft < 10 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
-            <Clock size={20} className="md:w-6 md:h-6" />
-            {timeLeft}s
+        <div className={`absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-white px-3 py-1 rounded-xl shadow-sm border border-gray-100 ${timeLeft < 11 ? 'animate-pulse border-red-200' : ''}`}>
+             <div className={`flex items-center gap-1.5 font-mono text-xl md:text-3xl font-black ${timeLeft < 11 ? 'text-red-500' : 'text-gray-700'}`}>
+                <Clock size={20} className={timeLeft < 11 ? 'animate-bounce' : ''} />
+                {timeLeft}
+            </div>
         </div>
 
         {/* Right: Target Word Peek */}
         <div className="flex flex-col items-end">
-            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-500 mb-0.5">Target</span>
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-400 mb-0.5 pr-1">Target</span>
             <div className="relative">
                 <button 
-                  onClick={() => setIsPeeking(!isPeeking)}
-                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold transition-all ${isPeeking ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}
+                  onClick={togglePeek}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-all shadow-sm border ${isPeeking ? 'bg-gray-800 text-white border-gray-800' : 'bg-gray-100 text-gray-600 border-gray-200'}`}
                 >
                     {isPeeking ? (
                         <>
-                           <span>{currentWord}</span>
-                           <EyeOff size={14} />
+                           <span className="max-w-[80px] md:max-w-none truncate">{currentWord}</span>
+                           <EyeOff size={14} className="flex-shrink-0" />
                         </>
                     ) : (
                         <>
@@ -305,42 +357,40 @@ const Gameplay: React.FC<GameplayProps> = ({ teams, onGameEnd, onScoreUpdate }) 
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 px-2 md:px-4 flex flex-col items-center w-full">
+      <div className="flex-1 px-2 md:px-4 flex flex-col items-center w-full z-10">
         <CanvasBoard ref={canvasRef} />
         
         {/* Action Buttons - Mobile Responsive */}
-        <div className="w-full max-w-2xl mt-4 md:mt-6 flex gap-3 md:gap-4">
+        <div className="w-full max-w-2xl mt-4 md:mt-6 flex gap-3 md:gap-4 px-2 md:px-0">
              <button
                 onClick={handleGiveUp}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 md:py-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
+                className="btn-3d flex-1 bg-gray-100 text-gray-500 font-bold py-3 md:py-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm md:text-base border-b-4 border-gray-300 hover:bg-gray-200 active:border-b-0 active:mt-1 active:mb-[-1px]"
             >
-                <X size={18} /> <span className="hidden sm:inline">Give Up / Time's Up</span><span className="sm:hidden">Give Up</span>
+                <X size={18} /> <span className="hidden sm:inline">Give Up</span><span className="sm:hidden">Give Up</span>
             </button>
             <button
                 onClick={handleCorrectGuess}
-                className="flex-[2] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm md:text-base"
+                className="btn-3d flex-[2] bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm md:text-lg border-b-4 border-green-800 active:border-b-0 active:mt-1 active:mb-[-1px]"
             >
-                <ThumbsUp size={20} /> <span className="sm:inline">We Guessed It!</span><span className="hidden">Correct</span>
+                <ThumbsUp size={20} /> <span className="sm:inline">Correct!</span><span className="hidden">Got it!</span>
             </button>
         </div>
         
-        <div className="flex flex-col items-center justify-between w-full max-w-2xl mt-4">
-            <button 
+        <div className="flex flex-col items-center justify-between w-full max-w-2xl mt-6 pb-4">
+             <button 
                 onClick={() => setShowEndGameConfirm(true)}
-                className="text-gray-300 hover:text-red-500 text-lg font-bold flex items-center gap-1 transition-colors"
+                className="text-gray-300 hover:text-red-500 text-sm font-bold flex items-center gap-1 transition-colors px-4 py-2 hover:bg-white/50 rounded-lg"
                 title="End Game Early"
             >
                 <Flag size={12} /> End Game
             </button>
-            <p className="text-[10px] md:text-xs text-gray-400 text-center">Click Green when your team guesses correctly!</p>
-            <div className="w-16"></div> {/* Spacer for center alignment of text */}
         </div>
       </div>
 
       {/* End Game Modal - Scoped here to allow ending during drawing */}
         {showEndGameConfirm && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border-4 border-red-100">
                     <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">Stop the Game?</h3>
                     <p className="text-gray-600 mb-6">Are you sure you want to end the game and see the winners?</p>

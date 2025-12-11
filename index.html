@@ -2,10 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DB7F2EQE1Y"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-DB7F2EQE1Y');
+    </script>
+
     <!-- SEO Optimization -->
-    <title>Christmas Pictionary | Fun Family Party Game for Large Groups</title>
+    <title>Christmas Pictionary | Fun Family Party Game</title>
     <meta name="description" content="The ultimate Christmas Pictionary game for large groups! Perfect for family holiday parties. Draw festive words, cast to TV, and guess with your team. Free online Christmas party game." />
     <meta name="keywords" content="family christmas games ideas, christmas party games for large groups, christmas pictionary, holiday drawing game, virtual christmas game" />
     
@@ -17,15 +27,80 @@
     <style>
       body {
         font-family: 'Nunito', sans-serif;
-        background-color: #fdf2f8; /* Soft snow white/pinkish */
-        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-        background-size: 20px 20px;
+        background-color: #fdf2f8;
+        background-image: 
+          radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 10%),
+          radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 50px 50px, 20px 20px;
+        overflow-x: hidden;
       }
       .font-christmas {
         font-family: 'Mountains of Christmas', cursive;
       }
-      .snow-bg {
-         background-image: url('https://www.transparenttextures.com/patterns/snow.png');
+      
+      /* Candy Cane Stripes */
+      .bg-candy-cane {
+        background: repeating-linear-gradient(
+          45deg,
+          #ef4444,
+          #ef4444 10px,
+          #ffffff 10px,
+          #ffffff 20px
+        );
+      }
+      
+      .border-candy-cane {
+        border: 4px solid transparent;
+        background: linear-gradient(#fff, #fff) padding-box,
+                    repeating-linear-gradient(45deg, #ef4444 0, #ef4444 10px, #22c55e 0, #22c55e 20px) border-box;
+      }
+
+      /* Snow Animation */
+      .snow-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      
+      .snowflake {
+        position: absolute;
+        top: -10px;
+        color: white;
+        font-size: 1em;
+        opacity: 0.8;
+        animation: fall linear forwards;
+      }
+
+      @keyframes fall {
+        to {
+          transform: translateY(105vh);
+        }
+      }
+
+      /* 3D Button Effect */
+      .btn-3d {
+        transition: all 0.1s;
+        border-bottom-width: 4px;
+      }
+      .btn-3d:active {
+        transform: translateY(2px);
+        border-bottom-width: 0px;
+        margin-top: 2px;
+        margin-bottom: 2px;
+      }
+
+      /* Hide scrollbar for clean UI */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
     </style>
   <script type="importmap">
@@ -36,13 +111,39 @@
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.1/client"
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.1/client",
+    "html2canvas": "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
+    <div class="snow-container" id="snow-container"></div>
+    <script>
+      // Simple snow generator
+      function createSnow() {
+        const container = document.getElementById('snow-container');
+        if(!container) return;
+        const snowflake = document.createElement('div');
+        snowflake.classList.add('snowflake');
+        snowflake.innerHTML = '❄';
+        snowflake.style.left = Math.random() * 100 + 'vw';
+        snowflake.style.animationDuration = Math.random() * 3 + 5 + 's';
+        snowflake.style.opacity = Math.random();
+        snowflake.style.fontSize = Math.random() * 10 + 10 + 'px';
+        
+        container.appendChild(snowflake);
+        
+        setTimeout(() => {
+          snowflake.remove();
+        }, 8000);
+      }
+      
+      // Reduce snow on mobile to save battery
+      const isMobile = window.innerWidth < 768;
+      setInterval(createSnow, isMobile ? 800 : 300);
+    </script>
     <script type="module" src="index.tsx"></script>
   </body>
 </html>
